@@ -1,0 +1,9 @@
+node_modules
+.next
+data.db
+*.db-journal
+config.local.json
+.env*
+coverage
+.kiro
+.git

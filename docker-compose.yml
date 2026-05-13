@@ -1,0 +1,18 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      # 持久化数据库和加密配置（不丢失抽奖历史）
+      - ./data.db:/app/data.db
+      - ./config.local.json:/app/config.local.json
+      # master key 单独挂载（物理分离）
+      - xhs-lottery-keys:/root/.kiro/xhs-lottery
+    environment:
+      - NODE_ENV=production
+      - HOSTNAME=0.0.0.0
+    restart: unless-stopped
+
+volumes:
+  xhs-lottery-keys:
