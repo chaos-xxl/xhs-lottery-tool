@@ -12,6 +12,7 @@ import { getRateLimiter, openSession } from '../../../../../lib/api/session';
 import { openDatabase, runMigrations } from '../../../../../lib/db';
 import { interactions, posts } from '../../../../../lib/db/schema';
 import { ensureSelfPost } from '../../../../../lib/xhs/author-guard';
+import { isExpiringSoon } from '../../../../../lib/xhs/cookie-monitor';
 import { fetchInteractions, type InteractionKind } from '../../../../../lib/xhs/fetch-interactions';
 
 export const runtime = 'nodejs';
@@ -43,6 +44,19 @@ export async function POST(req: Request, ctx: RouteContext): Promise<NextRespons
           hint: '请先去 Cookie 配置页重新导入',
         },
         { status: 409 },
+      );
+    }
+
+    // Cookie 即将过期检测
+    if (status.expiresInMs !== null && isExpiringSoon(status.expiresInMs)) {
+      return NextResponse.json(
+        {
+          ok: false,
+          code: 'cookie_expiring',
+          message: 'Cookie 即将过期（剩余不到24小时），请先去 /cookie 页面重新导入',
+          expiresInMs: status.expiresInMs,
+        },
+        { status: 401 },
       );
     }
 

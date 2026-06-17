@@ -241,3 +241,7 @@ export class CookieMonitor {
     }
   }
 }
+
+export function isExpiringSoon(expiresInMs: number, thresholdMs: number = 24 * 60 * 60 * 1000): boolean {
+  return expiresInMs < thresholdMs;
+}
