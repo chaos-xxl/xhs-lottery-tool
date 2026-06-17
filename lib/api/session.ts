@@ -39,12 +39,20 @@ export function openSession(): XhsSession {
 
   const limiter = getRateLimiter();
   // 优先使用存储的完整 Cookie 字符串（_raw 字段）
-  const cookieStr =
-    (cookie as Record<string, string>)._raw ??
-    Object.entries(cookie)
-      .filter(([k]) => k !== '_raw')
-      .map(([k, v]) => `${k}=${v}`)
-      .join('; ');
+  let cookieStr = (cookie as Record<string, string>)._raw ?? '';
+
+  if (!cookieStr) {
+    // 从对象构建，保留所有字段
+    const entries = Object.entries(cookie).filter(([k]) => k !== '_raw');
+    cookieStr = entries.map(([k, v]) => `${k}=${v}`).join('; ');
+  }
+
+  // 确保包含必要的签名字段
+  const requiredFields = ['web_session', 'a1', 'webId'];
+  const missingFields = requiredFields.filter(f => !cookieStr.includes(`${f}=`));
+  if (missingFields.length > 0) {
+    console.warn('[Session] Cookie missing required fields:', missingFields);
+  }
 
   const client = new XhsClient({
     cookie: cookieStr,
