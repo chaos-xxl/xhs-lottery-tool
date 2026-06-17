@@ -96,13 +96,45 @@ export class SignBrowserInstance {
 
     this.browser = await chromium.launch({
       executablePath,
-      headless,
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+      headless: true,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-blink-features=AutomationControlled',
+        '--disable-features=IsolateOrigins,site-per-process',
+        '--disable-infobars',
+        '--window-size=1920,1080',
+        '--headless=new',
+      ],
     });
 
     this.context = await this.browser.newContext({
       userAgent:
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+      viewport: { width: 1920, height: 1080 },
+      locale: 'zh-CN',
+      timezoneId: 'Asia/Shanghai',
+    });
+
+    // 反自动化检测：覆盖 navigator.webdriver
+    await this.context.addInitScript(() => {
+      Object.defineProperty(navigator, 'webdriver', { get: () => false });
+      // 覆盖 chrome.runtime 让页面认为是正常 Chrome
+      (window as unknown as Record<string, unknown>).chrome = {
+        runtime: {},
+        loadTimes: () => ({}),
+        csi: () => ({}),
+        app: {},
+      };
+      // 覆盖 permissions query
+      const originalQuery = window.navigator.permissions.query.bind(window.navigator.permissions);
+      window.navigator.permissions.query = (parameters: PermissionDescriptor) => {
+        if (parameters.name === 'notifications') {
+          return Promise.resolve({ state: 'denied' } as PermissionStatus);
+        }
+        return originalQuery(parameters);
+      };
     });
 
     // 注入 Cookie
