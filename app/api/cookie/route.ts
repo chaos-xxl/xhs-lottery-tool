@@ -11,6 +11,7 @@ import { errorResponse } from '../../../lib/api/errors';
 import { openSession, resetSessionCache } from '../../../lib/api/session';
 import { SecureStore } from '../../../lib/config/secure-store';
 import { XhsClient } from '../../../lib/xhs/client';
+import { closeSignBrowser } from '../../../lib/xhs/sign-browser';
 import { CookieMonitor } from '../../../lib/xhs/cookie-monitor';
 import { RateLimiter } from '../../../lib/xhs/rate-limiter';
 
@@ -47,6 +48,7 @@ export async function POST(req: Request): Promise<NextResponse> {
       _raw: cookieString,
     });
     resetSessionCache();
+    closeSignBrowser();
 
     // 立即探测一次
     const client = new XhsClient({
