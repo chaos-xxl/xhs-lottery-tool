@@ -48,7 +48,7 @@ export async function POST(req: Request): Promise<NextResponse> {
       _raw: cookieString,
     });
     resetSessionCache();
-    closeSignBrowser();
+    await closeSignBrowser();
 
     // 立即探测一次
     const client = new XhsClient({
